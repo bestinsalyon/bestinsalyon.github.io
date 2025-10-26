@@ -213,14 +213,110 @@ export default function BESTLyonLanding(): JSX.Element {
                   </div>
                 ))}
 
-                {/* Render time labels in the first column for each timeslot (starting at row 2) */}
-                {scheduleData.timeSlots.map((slot: any, rowIdx: number) => (
-                  <div key={rowIdx} style={{ gridRow: rowIdx + 2, gridColumn: 1 }} className="time-cell time-column">
-                    {slot.start}
-                  </div>
-                ))}
+                {/* Compute unit mapping for slots (base unit = 30 minutes) so events span correctly */}
+                {(() => {
+                  const unitMinutes = 30
+                  const slotUnits: number[] = scheduleData.timeSlots.map((s: any) => {
+                    const startParts = s.start.split(':').map((v: string) => parseInt(v, 10))
+                    const endParts = s.end.split(':').map((v: string) => parseInt(v, 10))
+                    const startMin = startParts[0] * 60 + startParts[1]
+                    const endMin = endParts[0] * 60 + endParts[1]
+                    const minutes = Math.max(0, endMin - startMin)
+                    return Math.max(1, Math.round(minutes / unitMinutes))
+                  })
 
-                {/* Compute events by scanning contiguous ranges per day and render as grid items */}
+                  // cumulative units per slot index
+                  const cumUnits: number[] = []
+                  let acc = 0
+                  for (let i = 0; i < slotUnits.length; i++) {
+                    cumUnits[i] = acc
+                    acc += slotUnits[i]
+                  }
+                  const totalUnits = acc
+
+                  // set gridTemplateRows: first row is header (48px), then totalUnits rows of unit height
+                  const unitH = 36
+                  const gridTemplateRows = ['48px']
+                  for (let u = 0; u < totalUnits; u++) gridTemplateRows.push(`${unitH}px`)
+
+                  // Render time labels positioned with unit-based spans
+                  const timeLabels = scheduleData.timeSlots.map((slot: any, rowIdx: number) => {
+                    const startUnit = cumUnits[rowIdx]
+                    const span = slotUnits[rowIdx]
+                    return (
+                      <div key={rowIdx} style={{ gridRow: `${startUnit + 2} / ${startUnit + 2 + span}`, gridColumn: 1 }} className="time-cell time-column">
+                        {slot.start}
+                      </div>
+                    )
+                  })
+
+                  // Compute events by scanning contiguous ranges per day and render as grid items
+                  const events: Array<any> = []
+                  const dayCount = scheduleData.days.length
+                  const slotCount = scheduleData.timeSlots.length
+
+                  for (let d = 0; d < dayCount; d++) {
+                    let i = 0
+                    while (i < slotCount) {
+                      const rawLabel = scheduleData.timeSlots[i].activities[d]
+                      const label = rawLabel ? String(rawLabel).trim() : ''
+                      if (!label) { i++; continue }
+                      // find end of contiguous same-label run (case-insensitive trim comparison)
+                      let j = i + 1
+                      while (j < slotCount) {
+                        const next = scheduleData.timeSlots[j].activities[d]
+                        if (!next) break
+                        if (String(next).trim().toLowerCase() !== label.toLowerCase()) break
+                        j++
+                      }
+                      events.push({ day: d, start: i, end: j, label })
+                      i = j
+                    }
+                  }
+
+                  return (
+                    <>
+                      {timeLabels}
+                      {events.map((ev, idx) => {
+                        // Convert slot indices to unit indices
+                        const unitStart = cumUnits[ev.start]
+                        const unitEnd = ev.end <= cumUnits.length ? cumUnits[ev.end] || totalUnits : totalUnits
+                        const rowStart = unitStart + 2 // header row sits at 1
+                        const rowEnd = unitEnd + 2
+                        const col = ev.day + 2
+                        const bgColor =
+                          ev.label.toLowerCase().includes('zzzzz') ? 'bg-purple-700/80' :
+                          ev.label.toLowerCase().includes('wake up') ? 'bg-pink-700/70' :
+                          (ev.label.toLowerCase().includes('official opening') || ev.label.toLowerCase().includes('introduction')) ? 'bg-amber-700/70' :
+                          ev.label.toLowerCase().includes('academics') ? 'bg-orange-600/70' :
+                          ev.label.toLowerCase().includes('coffee break') ? 'bg-blue-600/70' :
+                          ev.label.toLowerCase().includes('social activities') ? 'bg-emerald-600/70' :
+                          ev.label.toLowerCase().includes('lunch') ? 'bg-pink-600/70' :
+                          ev.label.toLowerCase().includes('dinner') ? 'bg-violet-600/70' :
+                          ev.label.toLowerCase().includes('free time') ? 'bg-yellow-600/70' :
+                          ev.label.toLowerCase().includes('evaluation') ? 'bg-orange-800/70' :
+                          ev.label.toLowerCase().includes('weekend trip') ? 'bg-cyan-600/70' :
+                          (ev.label.toLowerCase().includes('arrival') ? 'bg-red-600/70' : '') ||
+                          ev.label.toLowerCase().includes('departure') ? 'bg-red-700/70' :
+                          ev.label.toLowerCase().includes('get ready') ? 'bg-red-500/70' :
+                          ev.label.toLowerCase().includes('get2know') ? 'bg-pink-700/70' :
+                          ev.label.toLowerCase().includes('transport') ? 'bg-orange-700/70' :
+                          'bg-gray-600/60'
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`event-block ${bgColor}`}
+                            style={{ gridColumn: `${col} / ${col + 1}`, gridRow: `${rowStart} / ${rowEnd}`, gridTemplateRows: gridTemplateRows.join(' ') }}
+                            title={ev.label}
+                          >
+                            {ev.label}
+                          </div>
+                        )
+                      })}
+                    </>
+                  )
+                })()}
                 {(() => {
                   const events: Array<any> = []
                   const dayCount = scheduleData.days.length

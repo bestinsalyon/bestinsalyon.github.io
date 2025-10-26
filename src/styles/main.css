@@ -39,7 +39,9 @@ body {
 }
 .schedule-grid {
   display: grid;
-  grid-auto-rows: 48px; /* height per timeslot */
+  /* we'll define the row sizes dynamically from JS via gridTemplateRows. Default unit height is 36px */
+  --unit-h: 36px;
+  grid-auto-rows: var(--unit-h);
   grid-column-gap: 10px;
   align-items: stretch;
 }
@@ -64,6 +66,7 @@ body {
   padding: 8px 10px;
   color: #fff;
   font-weight:600;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.25);
 }
 .schedule-scroll {
   overflow: auto;
