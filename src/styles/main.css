@@ -37,6 +37,37 @@ body {
   border-collapse: collapse;
   table-layout: fixed;
 }
+.schedule-grid {
+  display: grid;
+  grid-auto-rows: 48px; /* height per timeslot */
+  grid-column-gap: 10px;
+  align-items: stretch;
+}
+.time-column {
+  position: sticky;
+  left: 0;
+  z-index: 40;
+  background: transparent;
+}
+.time-cell {
+  display:flex;
+  align-items:center;
+  padding-left:0.75rem;
+  color: rgba(148,163,184,0.95);
+  font-weight:500;
+}
+.event-block {
+  border-radius: 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 8px 10px;
+  color: #fff;
+  font-weight:600;
+}
+.schedule-scroll {
+  overflow: auto;
+}
 .schedule-table th {
   text-align: center;
   color: rgba(192, 132, 252, 0.9);
