@@ -213,39 +213,97 @@ export default function BESTLyonLanding(): JSX.Element {
                   </tr>
                 </thead>
                 <tbody>
-                  {scheduleData.timeSlots.map((slot: any, slotIdx: number) => (
-                    <tr key={slotIdx} className="schedule-row">
-                      <td className="schedule-time-col">{slot.start} - {slot.end}</td>
-                      {slot.activities.map((activity: string, actIdx: number) => {
-                        const bgColor = 
-                          activity.includes('ZZZZZ') ? 'bg-purple-700/70' :
-                          activity.includes('Wake Up') ? 'bg-pink-700/60' :
-                          activity.includes('Official Opening') || activity.includes('Introduction') ? 'bg-amber-700/60' :
-                          activity.includes('Academics') ? 'bg-orange-600/60' :
-                          activity.includes('Coffee Break') ? 'bg-blue-600/60' :
-                          activity.includes('Social Activities') ? 'bg-emerald-600/60' :
-                          activity.includes('Lunch') ? 'bg-pink-600/60' :
-                          activity.includes('Dinner') ? 'bg-violet-600/60' :
-                          activity.includes('Free time') ? 'bg-yellow-600/50' :
-                          activity.includes('Evaluation') ? 'bg-orange-800/60' :
-                          activity.includes('Weekend Trip') ? 'bg-cyan-600/60' :
-                          activity.includes('ARRIVAL') || activity.includes('Arrival') ? 'bg-red-600/60' :
-                          activity.includes('DEPARTURE') ? 'bg-red-700/60' :
-                          activity.includes('Get ready') ? 'bg-red-500/60' :
-                          activity.includes('Get2Know') ? 'bg-pink-700/60' :
-                          activity.includes('Transport') ? 'bg-orange-700/60' :
-                          ''
+                  {
+                    // Precompute row spans per day so activities render as full blocks across consecutive slots
+                    (() => {
+                      const dayCount = scheduleData.days.length
+                      const slotCount = scheduleData.timeSlots.length
+                      // spans[dayIndex][slotIndex] = number of rows to span if >0 and start of segment
+                      const spans: number[][] = Array.from({ length: dayCount }, () => Array(slotCount).fill(0))
 
-                        return (
-                          <td key={actIdx} className="p-2 text-center">
-                            {activity ? (
-                              <div className={`activity-pill ${bgColor}`}>{activity}</div>
-                            ) : null}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  ))}
+                      // Build spans by merging the full range for each label per day.
+                      // This ensures multi-slot events like "Weekend Trip" become a single large block
+                      for (let d = 0; d < dayCount; d++) {
+                        // collect labels present for this day
+                        const labels = new Set<string>()
+                        for (let i = 0; i < slotCount; i++) {
+                          const a = scheduleData.timeSlots[i].activities[d]
+                          if (a) labels.add(a)
+                        }
+
+                        // initialize spans to 1 for empty cells so they render as blanks
+                        for (let i = 0; i < slotCount; i++) spans[d][i] = 0
+
+                        // for each label, compute full first/last occurrence and mark a single span
+                        labels.forEach((label) => {
+                          let first = -1
+                          let last = -1
+                          for (let i = 0; i < slotCount; i++) {
+                            if (scheduleData.timeSlots[i].activities[d] === label) {
+                              if (first === -1) first = i
+                              last = i
+                            }
+                          }
+                          if (first !== -1 && last !== -1) {
+                            spans[d][first] = last - first + 1
+                            for (let m = first + 1; m <= last; m++) spans[d][m] = 0
+                          }
+                        })
+
+                        // any remaining index not assigned and empty -> set to 1 so an empty cell is rendered
+                        for (let i = 0; i < slotCount; i++) {
+                          if (spans[d][i] === 0) {
+                            const act = scheduleData.timeSlots[i].activities[d]
+                            if (!act) spans[d][i] = 1
+                          }
+                        }
+                      }
+
+                      return scheduleData.timeSlots.map((slot: any, slotIdx: number) => (
+                        <tr key={slotIdx} className="schedule-row">
+                          <td className="schedule-time-col">{slot.start} - {slot.end}</td>
+                          {scheduleData.days.map((_: string, dayIdx: number) => {
+                            const activity = scheduleData.timeSlots[slotIdx].activities[dayIdx] || ''
+                            const span = spans[dayIdx][slotIdx]
+                            if (activity && span > 0) {
+                              const bgColor =
+                                activity.includes('ZZZZZ') ? 'bg-purple-700/70' :
+                                activity.includes('Wake Up') ? 'bg-pink-700/60' :
+                                activity.includes('Official Opening') || activity.includes('Introduction') ? 'bg-amber-700/60' :
+                                activity.includes('Academics') ? 'bg-orange-600/60' :
+                                activity.includes('Coffee Break') ? 'bg-blue-600/60' :
+                                activity.includes('Social Activities') ? 'bg-emerald-600/60' :
+                                activity.includes('Lunch') ? 'bg-pink-600/60' :
+                                activity.includes('Dinner') ? 'bg-violet-600/60' :
+                                activity.includes('Free time') ? 'bg-yellow-600/50' :
+                                activity.includes('Evaluation') ? 'bg-orange-800/60' :
+                                activity.includes('Weekend Trip') ? 'bg-cyan-600/60' :
+                                activity.includes('ARRIVAL') || activity.includes('Arrival') ? 'bg-red-600/60' :
+                                activity.includes('DEPARTURE') ? 'bg-red-700/60' :
+                                activity.includes('Get ready') ? 'bg-red-500/60' :
+                                activity.includes('Get2Know') ? 'bg-pink-700/60' :
+                                activity.includes('Transport') ? 'bg-orange-700/60' :
+                                'bg-gray-600/40'
+
+                              return (
+                                <td key={dayIdx} rowSpan={span} className="p-1 align-middle">
+                                  <div className={`activity-block ${bgColor}`}>{activity}</div>
+                                </td>
+                              )
+                            }
+
+                            if (!activity) {
+                              // render empty cell (no block)
+                              return <td key={dayIdx} className="p-1" />
+                            }
+
+                            // span === 0 -> covered by previous cell, skip rendering
+                            return null
+                          })}
+                        </tr>
+                      ))
+                    })()
+                  }
                 </tbody>
               </table>
             </div>

@@ -70,6 +70,16 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.activity-block {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
 .schedule-container-bg {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
 }
