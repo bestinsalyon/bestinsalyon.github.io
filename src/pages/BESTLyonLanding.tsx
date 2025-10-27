@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Schedule from './Schedule'
 import { Download, Calendar, MapPin, Users, Zap, Music, Book, Info, Mail, Award, Clock, GraduationCap } from 'lucide-react'
 
 export default function BESTLyonLanding(): JSX.Element {
@@ -11,30 +12,8 @@ export default function BESTLyonLanding(): JSX.Element {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const scheduleData: any = {
-    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday'],
-    timeSlots: [
-      { start: '7:00', end: '8:00', activities: ['ZZZZZ', 'ZZZZZ', 'ZZZZZ', 'ZZZZZ', 'ZZZZZ', '', '', ''] },
-      { start: '8:00', end: '9:00', activities: ['Wake Up + Breakfast', 'Wake Up + Breakfast', 'Wake Up + Breakfast', 'Wake Up + Breakfast', 'Wake Up + Breakfast', '', 'Weekend Trip', ''] },
-      { start: '9:00', end: '10:30', activities: ['Official Opening', 'Academics', 'Academics', 'Academics', 'Academics', '', '', ''] },
-      { start: '9:30', end: '10:00', activities: ['Introduction', '', '', '', '', '', '', ''] },
-      { start: '10:30', end: '11:00', activities: ['Coffee Break', 'Coffee Break', 'Coffee Break', 'Coffee Break', 'Coffee Break', '', '', ''] },
-      { start: '11:00', end: '13:00', activities: ['Academics', 'Academics', 'Academics', 'Academics', 'Academics', '', '', ''] },
-      { start: '12:00', end: '13:30', activities: ['Social Activities', '', '', '', '', '', '', ''] },
-      { start: '13:00', end: '14:00', activities: ['Lunch', 'Lunch', 'Lunch', 'Lunch', 'Lunch', '', '', ''] },
-      { start: '13:30', end: '14:00', activities: ['Lunch', '', '', '', '', '', '', ''] },
-      { start: '14:00', end: '15:30', activities: ['Academics', 'Academics', 'Academics', 'Academics', 'Evaluation', '', 'Arrival at Lyon', 'DEPARTURE'] },
-      { start: '14:30', end: '15:00', activities: ['Social Activities', '', '', '', '', 'Weekend Trip', '', ''] },
-      { start: '15:00', end: '16:00', activities: ['Coffee Break', 'Coffee Break', 'Coffee Break', 'Coffee Break', 'Coffee Break', '', '', ''] },
-      { start: '16:00', end: '17:00', activities: ['Academics', 'Academics', 'Academics', 'Academics', 'Evaluation', '', '', ''] },
-      { start: '16:30', end: '17:00', activities: ['ARRIVAL', '', '', '', '', '', 'Transport', ''] },
-      { start: '17:00', end: '19:00', activities: ['Free time', '', '', '', 'Get ready for WT!', '', '', ''] },
-      { start: '18:30', end: '19:00', activities: ['Get2Know Games', 'Social Activities', 'Free time', 'Social Activities', 'Free time', 'Social Activities', '', ''] },
-      { start: '19:00', end: '20:30', activities: ['', '', '', '', '', '', '', ''] },
-      { start: '20:00', end: '21:00', activities: ['Dinner', 'Dinner', 'Dinner', 'Dinner', 'Dinner', 'Dinner', 'Weekend Trip', 'Arrival at Lyon'] },
-      { start: '21:00', end: '22:30', activities: ['Social activities', 'Social activities', 'Social activities', 'Social activities', 'Social activities', 'Social activities', '', 'Social activities'] }
-    ]
-  }
+  // schedule data was moved into src/pages/Schedule.tsx (slot-based renderer)
+  // leaving this comment so it's clear the landing page uses the shared Schedule component
 
   const scrollToSection = (id: string) => {
     setActiveSection(id)
@@ -203,174 +182,8 @@ export default function BESTLyonLanding(): JSX.Element {
 
           <div className="overflow-x-auto schedule-scroll">
             <div className="schedule-wrap bg-white/5 schedule-container-bg backdrop-blur-sm border border-purple-500/20 rounded-2xl p-6">
-              {/* Build a CSS grid where first column is time labels (sticky) and next columns are days */}
-              <div className="schedule-grid" style={{ gridTemplateColumns: `110px repeat(${scheduleData.days.length}, minmax(120px, 1fr))` }}>
-                {/* Render header row: empty cell for time then day names */}
-                <div className="time-column" style={{ gridRow: 1, gridColumn: 1 }} />
-                {scheduleData.days.map((day: string, idx: number) => (
-                  <div key={idx} style={{ gridRow: 1, gridColumn: idx + 2 }} className="text-center font-semibold text-purple-300 p-2">
-                    {day}
-                  </div>
-                ))}
-
-                {/* Compute unit mapping for slots (base unit = 30 minutes) so events span correctly */}
-                {(() => {
-                  const unitMinutes = 30
-                  const slotUnits: number[] = scheduleData.timeSlots.map((s: any) => {
-                    const startParts = s.start.split(':').map((v: string) => parseInt(v, 10))
-                    const endParts = s.end.split(':').map((v: string) => parseInt(v, 10))
-                    const startMin = startParts[0] * 60 + startParts[1]
-                    const endMin = endParts[0] * 60 + endParts[1]
-                    const minutes = Math.max(0, endMin - startMin)
-                    return Math.max(1, Math.round(minutes / unitMinutes))
-                  })
-
-                  // cumulative units per slot index
-                  const cumUnits: number[] = []
-                  let acc = 0
-                  for (let i = 0; i < slotUnits.length; i++) {
-                    cumUnits[i] = acc
-                    acc += slotUnits[i]
-                  }
-                  const totalUnits = acc
-
-                  // set gridTemplateRows: first row is header (48px), then totalUnits rows of unit height
-                  const unitH = 36
-                  const gridTemplateRows = ['48px']
-                  for (let u = 0; u < totalUnits; u++) gridTemplateRows.push(`${unitH}px`)
-
-                  // Render time labels positioned with unit-based spans
-                  const timeLabels = scheduleData.timeSlots.map((slot: any, rowIdx: number) => {
-                    const startUnit = cumUnits[rowIdx]
-                    const span = slotUnits[rowIdx]
-                    return (
-                      <div key={rowIdx} style={{ gridRow: `${startUnit + 2} / ${startUnit + 2 + span}`, gridColumn: 1 }} className="time-cell time-column">
-                        {slot.start}
-                      </div>
-                    )
-                  })
-
-                  // Compute events by scanning contiguous ranges per day and render as grid items
-                  const events: Array<any> = []
-                  const dayCount = scheduleData.days.length
-                  const slotCount = scheduleData.timeSlots.length
-
-                  for (let d = 0; d < dayCount; d++) {
-                    let i = 0
-                    while (i < slotCount) {
-                      const rawLabel = scheduleData.timeSlots[i].activities[d]
-                      const label = rawLabel ? String(rawLabel).trim() : ''
-                      if (!label) { i++; continue }
-                      // find end of contiguous same-label run (case-insensitive trim comparison)
-                      let j = i + 1
-                      while (j < slotCount) {
-                        const next = scheduleData.timeSlots[j].activities[d]
-                        if (!next) break
-                        if (String(next).trim().toLowerCase() !== label.toLowerCase()) break
-                        j++
-                      }
-                      events.push({ day: d, start: i, end: j, label })
-                      i = j
-                    }
-                  }
-
-                  return (
-                    <>
-                      {timeLabels}
-                      {events.map((ev, idx) => {
-                        // Convert slot indices to unit indices
-                        const unitStart = cumUnits[ev.start]
-                        const unitEnd = ev.end <= cumUnits.length ? cumUnits[ev.end] || totalUnits : totalUnits
-                        const rowStart = unitStart + 2 // header row sits at 1
-                        const rowEnd = unitEnd + 2
-                        const col = ev.day + 2
-                        const bgColor =
-                          ev.label.toLowerCase().includes('zzzzz') ? 'bg-purple-700/80' :
-                          ev.label.toLowerCase().includes('wake up') ? 'bg-pink-700/70' :
-                          (ev.label.toLowerCase().includes('official opening') || ev.label.toLowerCase().includes('introduction')) ? 'bg-amber-700/70' :
-                          ev.label.toLowerCase().includes('academics') ? 'bg-orange-600/70' :
-                          ev.label.toLowerCase().includes('coffee break') ? 'bg-blue-600/70' :
-                          ev.label.toLowerCase().includes('social activities') ? 'bg-emerald-600/70' :
-                          ev.label.toLowerCase().includes('lunch') ? 'bg-pink-600/70' :
-                          ev.label.toLowerCase().includes('dinner') ? 'bg-violet-600/70' :
-                          ev.label.toLowerCase().includes('free time') ? 'bg-yellow-600/70' :
-                          ev.label.toLowerCase().includes('evaluation') ? 'bg-orange-800/70' :
-                          ev.label.toLowerCase().includes('weekend trip') ? 'bg-cyan-600/70' :
-                          (ev.label.toLowerCase().includes('arrival') ? 'bg-red-600/70' : '') ||
-                          ev.label.toLowerCase().includes('departure') ? 'bg-red-700/70' :
-                          ev.label.toLowerCase().includes('get ready') ? 'bg-red-500/70' :
-                          ev.label.toLowerCase().includes('get2know') ? 'bg-pink-700/70' :
-                          ev.label.toLowerCase().includes('transport') ? 'bg-orange-700/70' :
-                          'bg-gray-600/60'
-
-                        return (
-                          <div
-                            key={idx}
-                            className={`event-block ${bgColor}`}
-                            style={{ gridColumn: `${col} / ${col + 1}`, gridRow: `${rowStart} / ${rowEnd}`, gridTemplateRows: gridTemplateRows.join(' ') }}
-                            title={ev.label}
-                          >
-                            {ev.label}
-                          </div>
-                        )
-                      })}
-                    </>
-                  )
-                })()}
-                {(() => {
-                  const events: Array<any> = []
-                  const dayCount = scheduleData.days.length
-                  const slotCount = scheduleData.timeSlots.length
-
-                  for (let d = 0; d < dayCount; d++) {
-                    let i = 0
-                    while (i < slotCount) {
-                      const label = scheduleData.timeSlots[i].activities[d]
-                      if (!label) { i++; continue }
-                      // find end of contiguous same-label run
-                      let j = i + 1
-                      while (j < slotCount && scheduleData.timeSlots[j].activities[d] === label) j++
-                      events.push({ day: d, start: i, end: j, label })
-                      i = j
-                    }
-                  }
-
-                  return events.map((ev, idx) => {
-                    const rowStart = ev.start + 2 // account for header row
-                    const rowEnd = ev.end + 2
-                    const col = ev.day + 2
-                    const bgColor =
-                      ev.label.includes('ZZZZZ') ? 'bg-purple-700/80' :
-                      ev.label.includes('Wake Up') ? 'bg-pink-700/70' :
-                      ev.label.includes('Official Opening') || ev.label.includes('Introduction') ? 'bg-amber-700/70' :
-                      ev.label.includes('Academics') ? 'bg-orange-600/70' :
-                      ev.label.includes('Coffee Break') ? 'bg-blue-600/70' :
-                      ev.label.includes('Social Activities') ? 'bg-emerald-600/70' :
-                      ev.label.includes('Lunch') ? 'bg-pink-600/70' :
-                      ev.label.includes('Dinner') ? 'bg-violet-600/70' :
-                      ev.label.includes('Free time') ? 'bg-yellow-600/70' :
-                      ev.label.includes('Evaluation') ? 'bg-orange-800/70' :
-                      ev.label.includes('Weekend Trip') ? 'bg-cyan-600/70' :
-                      ev.label.includes('ARRIVAL') || ev.label.includes('Arrival') ? 'bg-red-600/70' :
-                      ev.label.includes('DEPARTURE') ? 'bg-red-700/70' :
-                      ev.label.includes('Get ready') ? 'bg-red-500/70' :
-                      ev.label.includes('Get2Know') ? 'bg-pink-700/70' :
-                      ev.label.includes('Transport') ? 'bg-orange-700/70' :
-                      'bg-gray-600/60'
-
-                    return (
-                      <div
-                        key={idx}
-                        className={`event-block ${bgColor}`}
-                        style={{ gridColumn: `${col} / ${col + 1}`, gridRow: `${rowStart} / ${rowEnd}` }}
-                        title={ev.label}
-                      >
-                        {ev.label}
-                      </div>
-                    )
-                  })
-                })()}
-              </div>
+              {/* Use the refactored Schedule component (slot-based, 30-min units) */}
+              <Schedule />
             </div>
           </div>
 
@@ -423,11 +236,13 @@ export default function BESTLyonLanding(): JSX.Element {
 
             <div className="flex justify-center">
               <a 
-                href="#"
+                href="https://www.canva.com/design/DAGZ7kGrkm0/ekGT8LOHMIc_59N_Z-KrYg/view?utm_content=DAGZ7kGrkm0&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h11e73b09cb"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8 py-3 rounded-full inline-flex items-center justify-center space-x-2 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50"
               >
                 <Download className="w-5 h-5" />
-                <span>Download Survival Guide (PDF)</span>
+                <span>Open Survival Guide</span>
               </a>
             </div>
           </div>
