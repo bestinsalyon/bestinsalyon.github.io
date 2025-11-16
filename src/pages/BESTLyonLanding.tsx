@@ -236,7 +236,7 @@ export default function BESTLyonLanding(): JSX.Element {
 
             <div className="flex justify-center">
               <a 
-                href="https://www.canva.com/design/DAGZ7kGrkm0/ekGT8LOHMIc_59N_Z-KrYg/view?utm_content=DAGZ7kGrkm0&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h11e73b09cb"
+                href="https://www.canva.com/design/DAG3ravHV1I/w68xzyhmZamHqdRfsLhE9w/view?utm_content=DAG3ravHV1I&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6cb2e66091"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-8 py-3 rounded-full inline-flex items-center justify-center space-x-2 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/50"
@@ -320,3 +320,4 @@ export default function BESTLyonLanding(): JSX.Element {
     </div>
   )
 }
+
